@@ -63,7 +63,7 @@ public class IconGeneratorDemoActivity extends BaseDemoActivity {
 
     private void addIcon(IconGenerator iconFactory, CharSequence text, LatLng position) {
         MarkerOptions markerOptions = new MarkerOptions().
-                icon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(text))).
+                icon(BitmapDescriptorFactory.fromBitmap(iconFactory.makeIcon(text.toString()))).
                 position(position).
                 anchor(iconFactory.getAnchorU(), iconFactory.getAnchorV());
 
