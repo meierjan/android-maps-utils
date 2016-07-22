@@ -49,25 +49,6 @@ public class GeoJsonLineStringStyle extends Observable implements GeoJsonStyle {
         mPolylineOptions.color(color);
         styleChanged();
     }
-    
-    /**
-     * Gets the clickability setting for this Options object
-     * 
-     * @return true if the GeoJsonLineString is clickable; false if it is not
-     */
-    public boolean isClickable() {
-        return mPolylineOptions.isClickable();
-    }
-    
-    /**
-     * Specifies whether this GeoJsonLineString is clickable
-     * 
-     * @param clickable  - new clickability setting for the GeoJsonLineString
-     */
-    public void setClickable(boolean clickable) {
-        mPolylineOptions.clickable(clickable);
-        styleChanged();
-    }
 
     /**
      * Gets whether the GeoJsonLineString is geodesic
@@ -164,7 +145,6 @@ public class GeoJsonLineStringStyle extends Observable implements GeoJsonStyle {
     public PolylineOptions toPolylineOptions() {
         PolylineOptions polylineOptions = new PolylineOptions();
         polylineOptions.color(mPolylineOptions.getColor());
-        polylineOptions.clickable(mPolylineOptions.isClickable());
         polylineOptions.geodesic(mPolylineOptions.isGeodesic());
         polylineOptions.visible(mPolylineOptions.isVisible());
         polylineOptions.width(mPolylineOptions.getWidth());
@@ -177,7 +157,6 @@ public class GeoJsonLineStringStyle extends Observable implements GeoJsonStyle {
         StringBuilder sb = new StringBuilder("LineStringStyle{");
         sb.append("\n geometry type=").append(Arrays.toString(GEOMETRY_TYPE));
         sb.append(",\n color=").append(getColor());
-        sb.append(",\n clickable=").append(isClickable());
         sb.append(",\n geodesic=").append(isGeodesic());
         sb.append(",\n visible=").append(isVisible());
         sb.append(",\n width=").append(getWidth());

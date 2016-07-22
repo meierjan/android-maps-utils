@@ -1,20 +1,14 @@
-/*
- * Copyright 2013 Google Inc.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
-
 package com.google.maps.android.clustering.algo;
+
+import com.google.android.gms.maps.GoogleMap;
+import com.google.android.gms.maps.model.CameraPosition;
+import com.google.android.gms.maps.model.LatLng;
+import com.google.maps.android.clustering.Cluster;
+import com.google.maps.android.clustering.ClusterItem;
+import com.google.maps.android.geometry.Bounds;
+import com.google.maps.android.geometry.Point;
+import com.google.maps.android.projection.SphericalMercatorProjection;
+import com.google.maps.android.quadtree.PointQuadTree;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -25,17 +19,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import com.google.android.gms.maps.model.LatLng;
-import com.google.maps.android.clustering.Cluster;
-import com.google.maps.android.clustering.ClusterItem;
-import com.google.maps.android.geometry.Bounds;
-import com.google.maps.android.geometry.Point;
-import com.google.maps.android.projection.SphericalMercatorProjection;
-import com.google.maps.android.quadtree.PointQuadTree;
-
 /**
  * A simple clustering algorithm with O(nlog n) performance. Resulting clusters are not
- * hierarchical.
+ * hierarchical. This algorithm will compute clusters only in visible area.
  * <p/>
  * High level algorithm:<br>
  * 1. Iterate over items in the order they were added (candidate clusters).<br>
@@ -46,7 +32,9 @@ import com.google.maps.android.quadtree.PointQuadTree;
  * <p/>
  * Clusters have the center of the first element (not the centroid of the items within it).
  */
-public class NonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem> implements Algorithm<T> {
+public class VisibleNonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem>
+        implements Algorithm<T>, GoogleMap.OnCameraChangeListener {
+
     public static final int MAX_DISTANCE_AT_ZOOM = 100; // essentially 100 dp.
 
     /**
@@ -60,6 +48,14 @@ public class NonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem> implem
     private final PointQuadTree<QuadItem<T>> mQuadTree = new PointQuadTree<QuadItem<T>>(0, 1, 0, 1);
 
     private static final SphericalMercatorProjection PROJECTION = new SphericalMercatorProjection(1);
+    private final int mScreenWidth;
+    private final int mScreenHeight;
+    private LatLng mMapCenter;
+
+    public VisibleNonHierarchicalDistanceBasedAlgorithm(int screenWidth, int screenHeight) {
+        mScreenWidth = screenWidth;
+        mScreenHeight = screenHeight;
+    }
 
     @Override
     public void addItem(T item) {
@@ -88,7 +84,7 @@ public class NonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem> implem
     @Override
     public void removeItem(T item) {
         // TODO: delegate QuadItem#hashCode and QuadItem#equals to its item.
-        throw new UnsupportedOperationException("NonHierarchicalDistanceBasedAlgorithm.remove not implemented");
+        throw new UnsupportedOperationException("VisibleNonHierarchicalDistanceBasedAlgorithm.remove not implemented");
     }
 
     @Override
@@ -103,7 +99,12 @@ public class NonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem> implem
         final Map<QuadItem<T>, StaticCluster<T>> itemToCluster = new HashMap<QuadItem<T>, StaticCluster<T>>();
 
         synchronized (mQuadTree) {
-            for (QuadItem<T> candidate : mItems) {
+
+            Bounds visibleBounds = getVisibleBounds(discreteZoom);
+
+            Collection<QuadItem<T>> items = mQuadTree.search(visibleBounds);
+
+            for (QuadItem<T> candidate : items) {
                 if (visitedCandidates.contains(candidate)) {
                     // Candidate is already part of another cluster.
                     continue;
@@ -165,6 +166,26 @@ public class NonHierarchicalDistanceBasedAlgorithm<T extends ClusterItem> implem
         return new Bounds(
                 p.x - halfSpan, p.x + halfSpan,
                 p.y - halfSpan, p.y + halfSpan);
+    }
+
+    private Bounds getVisibleBounds(int zoom) {
+        if (mMapCenter == null) {
+            return new Bounds(0, 0, 0, 0);
+        }
+
+        Point p = PROJECTION.toPoint(mMapCenter);
+
+        final double halfWidthSpan = mScreenWidth / Math.pow(2, zoom) / 256 / 2;
+        final double halfHeightSpan = mScreenHeight / Math.pow(2, zoom) / 256 / 2;
+
+        return new Bounds(
+                p.x - halfWidthSpan, p.x + halfWidthSpan,
+                p.y - halfHeightSpan, p.y + halfHeightSpan);
+    }
+
+    @Override
+    public void onCameraChange(CameraPosition cameraPosition) {
+        mMapCenter = cameraPosition.target;
     }
 
     private static class QuadItem<T extends ClusterItem> implements PointQuadTree.Item, Cluster<T> {
