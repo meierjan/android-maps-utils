@@ -5,8 +5,11 @@ buildscript {
     }
 
     dependencies {
-        classpath 'com.android.tools.build:gradle:2.2.0-alpha6'
+        classpath('com.android.tools.build:gradle:2.1.0') {
+            force = true
+        }
     }
+
 }
 /**
  * Improve build server performance by allowing disabling of pre-dexing
