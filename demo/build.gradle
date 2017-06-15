@@ -4,12 +4,12 @@ dependencies {
     compile project(':library')
     // Or, fetch from Maven:
     // compile 'com.google.maps.android:android-maps-utils:0.3+'
-    compile 'com.google.android.gms:play-services-maps:9.2.0'
+    compile 'com.google.android.gms:play-services-maps:11.0.1'
 }
 
 android {
     compileSdkVersion 23
-    buildToolsVersion '25.0.0'
+    buildToolsVersion '25.0.3'
 
     sourceSets {
         main {
